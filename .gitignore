@@ -18,3 +18,6 @@ config.yaml
 # Docker Local Data
 docker/tb-data/
 docker/tb-logs/
+
+# VS Code local paths
+.vscode/
