@@ -1,10 +1,5 @@
 ﻿# Hệ thống Giám sát và Điều khiển Khí hậu Nhà kính (Greenhouse Climate Monitoring & Control System)
 
-![HCMUT](https://img.shields.io/badge/HCMUT-Đại_học_Bách_Khoa-0055A6?style=flat-square)
-![Course](https://img.shields.io/badge/Course-CO3037_IoT-success?style=flat-square)
-![PlatformIO](https://img.shields.io/badge/Firmware-PlatformIO_%7C_ESP32--S3-orange?style=flat-square)
-![Python](https://img.shields.io/badge/Gateway-Python_3.10+-blue?style=flat-square)
-![Docker](https://img.shields.io/badge/Local_Server-Docker_%7C_ThingsBoard-2496ED?style=flat-square)
 
 Dự án Bài tập lớn môn học **Internet of Things (IoT)** – Học kỳ 261 (Năm học 2025–2026)  
 **Khoa Khoa học và Kỹ thuật Máy tính – Trường Đại học Bách Khoa, ĐHQG-HCM**  
