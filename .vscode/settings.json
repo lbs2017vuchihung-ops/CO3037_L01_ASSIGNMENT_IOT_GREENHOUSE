@@ -1,0 +1,12 @@
+{
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/firmware/node_center/include",
+        "${workspaceFolder}/firmware/node_sensor/include",
+        "${workspaceFolder}/firmware/node_center/.pio/libdeps/yolo_uno/**",
+        "${workspaceFolder}/firmware/node_sensor/.pio/libdeps/node_sensor/**",
+        "${env:USERPROFILE}/.platformio/packages/framework-arduinoespressif32/cores/esp32/**",
+        "${env:USERPROFILE}/.platformio/packages/framework-arduinoespressif32/variants/esp32s3/**",
+        "${env:USERPROFILE}/.platformio/packages/framework-arduinoespressif32/variants/esp32/**",
+        "${env:USERPROFILE}/.platformio/packages/framework-arduinoespressif32/libraries/**"
+    ]
+}
