@@ -1,0 +1,11 @@
+serial:
+  port: "COM5"
+  baudrate: 115200
+  timeout: 1.0
+
+coreiot:
+  host: "app.coreiot.io"
+  port: 1883
+  access_token: "YOUR_COREIOT_DEVICE_TOKEN"
+  telemetry_topic: "v1/devices/me/telemetry"
+  rpc_request_topic: "v1/devices/me/rpc/request/+"
