@@ -2,15 +2,17 @@
 
 **CO3037 – Internet of Things | Học kỳ 261**
 
-Module CoreIOT cung cấp giao diện giám sát nhà kính, điều khiển máy bơm và quạt thông gió theo chế độ thủ công/tự động, cảnh báo môi trường và thông báo trong ứng dụng.
+Module CoreIOT cung cấp giao diện giám sát môi trường và dinh dưỡng đất (NPK) trong nhà kính, điều khiển máy bơm và quạt thông gió theo chế độ thủ công/tự động, cảnh báo môi trường và thông báo trong ứng dụng.
 
 ## 1. Phạm vi thực hiện
 
 | Nhiệm vụ | Nội dung | Trạng thái |
 |---|---|---|
-| T11 | Dashboard giám sát và điều khiển | Đã kiểm thử trên simulator |
-| T12 | RuleChain điều khiển tự động theo ngưỡng động | Đã kiểm thử trên simulator |
-| T13 | Alarm và Notification | Đã kiểm thử thông báo trong ứng dụng |
+| T11 | Dashboard giám sát và điều khiển (17 widget) | Đã kiểm thử các chức năng chính trên simulator |
+| T12 | RuleChain điều khiển tự động theo ngưỡng động | Đã quan sát bơm và quạt tự động bật/tắt trên simulator |
+| T13 | Alarm và Notification | Đã quan sát tạo Alarm; Clear Alarm và Notification chưa xác nhận lại đầy đủ sau cập nhật |
+
+Phạm vi hiện tại chỉ điều khiển bơm/quạt ON/OFF. Pump Level và LED Status tạm hoãn đến khi kiểm thử phần cứng; không có widget hoặc logic điều khiển theo mức bơm trong RuleChain hiện tại.
 
 ## 2. Cấu trúc thư mục
 
@@ -24,7 +26,7 @@ coreiot/
     └── simulate_telemetry.py
 ```
 
-- `dashboard.json`: cấu hình Smart Greenhouse (14 widget).
+- `dashboard.json`: cấu hình Smart Greenhouse (17 widget).
 - `rulechain.json`: cấu hình Greenhouse_RuleChain (16 node, 17 liên kết).
 - `tests/`: chương trình giả lập thiết bị MQTT và các thư viện Python cần thiết.
 
@@ -47,7 +49,7 @@ flowchart LR
     L --> N[Notification Center]
 ```
 
-Logic tự động được thực hiện trên CoreIOT. Gateway nhận lệnh RPC, điều khiển thiết bị và gửi trạng thái thực tế về cloud. Simulator thay thế Gateway trong quá trình kiểm thử độc lập.
+Logic tự động được thực hiện trên CoreIOT. Theo thiết kế, Gateway nhận lệnh RPC, chuyển lệnh xuống Node Center và chuyển telemetry về cloud. Simulator thay thế Gateway trong quá trình kiểm thử độc lập. Chưa xác nhận luồng điều khiển này trên phần cứng thật.
 
 ## 4. Triển khai trên CoreIOT
 
@@ -74,7 +76,7 @@ Vào **Entities → Devices → Greenhouse_Gateway → Attributes → Shared att
 
 | Key | Kiểu dữ liệu | Giá trị khởi tạo đề xuất | Ý nghĩa |
 |---|---|---|---|
-| `auto_mode` | Boolean | `true` | Bật chế độ tự động |
+| `auto_mode` | Boolean | `false` | MANUAL; chuyển sang `true` (AUTO) khi cần kiểm thử tự động |
 | `soil_threshold` | Integer | `40` | Ngưỡng độ ẩm đất (%) |
 | `temp_threshold` | Integer | `35` | Ngưỡng nhiệt độ không khí (°C) |
 
@@ -95,7 +97,7 @@ Các giá trị trên là cấu hình khởi tạo, không phải ngưỡng hard
 
 Mở **Notification center → Rules** để kiểm tra cấu hình thông báo cho sự kiện Alarm created và Alarm cleared. Bảo đảm người dùng cần nhận thông báo thuộc nhóm người nhận được cấu hình và kênh Web/in-app được bật. Nếu tài khoản đã có rule phù hợp, tái sử dụng để tránh gửi trùng. Nếu chưa có, tạo rule và template phù hợp với hai loại Alarm ở mục 7.
 
-Cấu hình Notification của tenant không nằm trong hai file JSON. Tại môi trường đã kiểm thử, thông báo tạo và kết thúc Alarm xuất hiện ở biểu tượng chuông. Email/SMS chưa được kiểm thử.
+Cấu hình Notification của tenant không nằm trong hai file JSON. Ở phiên bản trước, thông báo tạo và kết thúc Alarm đã xuất hiện ở biểu tượng chuông. Sau cập nhật telemetry, cần xác nhận lại cả hai sự kiện. Email/SMS chưa được kiểm thử.
 
 ## 5. Quy ước giao tiếp MQTT
 
@@ -118,27 +120,43 @@ Publish topic: `v1/devices/me/telemetry`.
 
 | Key | Kiểu dữ liệu | Đơn vị / ý nghĩa |
 |---|---|---|
-| `airTemp` | Number | Nhiệt độ không khí (°C) |
-| `soilTemp` | Number | Nhiệt độ đất (°C) |
-| `airHumidity` | Number | Độ ẩm không khí (%) |
-| `soilMoisture` | Number | Độ ẩm đất (%) |
-| `pumpState` | Boolean | Trạng thái thực tế máy bơm |
-| `fanState` | Boolean | Trạng thái thực tế quạt |
+| `packet_id` | Integer | Mã gói dữ liệu |
+| `rx_count` | Integer | Bộ đếm gói nhận |
+| `temp` | Number | Nhiệt độ không khí (°C), một chữ số thập phân |
+| `hum_air` | Number | Độ ẩm không khí (%), một chữ số thập phân |
+| `hum_soil` | Integer | Độ ẩm đất (%) |
+| `light` | Integer | Cường độ ánh sáng (%) |
+| `nitrogen` | Integer | Hàm lượng Nitrogen (mg/kg) |
+| `phosphorus` | Integer | Hàm lượng Phosphorus (mg/kg) |
+| `potassium` | Integer | Hàm lượng Potassium (mg/kg) |
+| `pump_level` | Integer | Mức bơm 0/1/2; tạm hoãn sử dụng trên Dashboard/RuleChain |
+| `pump_state` | Boolean | Trạng thái bật/tắt máy bơm |
+| `fan_state` | Boolean | Trạng thái bật/tắt quạt |
+| `led_color` | String | GREEN/YELLOW/RED; tạm hoãn hiển thị và kiểm thử phần cứng |
 
-Ví dụ payload:
+Ví dụ payload của simulator:
 
 ```json
 {
-  "airTemp": 32.5,
-  "soilTemp": 28.3,
-  "airHumidity": 65.8,
-  "soilMoisture": 42.6,
-  "pumpState": false,
-  "fanState": true
+  "packet_id": 1,
+  "rx_count": 1,
+  "temp": 32.5,
+  "hum_air": 65.8,
+  "hum_soil": 42,
+  "light": 75,
+  "nitrogen": 50,
+  "phosphorus": 65,
+  "potassium": 80,
+  "pump_level": 0,
+  "pump_state": false,
+  "fan_state": true,
+  "led_color": "GREEN"
 }
 ```
 
-Gateway cần báo đủ các key, đặc biệt là hai trạng thái Boolean để RuleChain không gửi lệnh khi thiết bị đã ở đúng trạng thái mong muốn.
+Simulator phát 13 key theo cấu trúc telemetry mới. Trong đó `pump_state` được suy ra từ `pump_level > 0`, còn `led_color` được ánh xạ theo mức 0/1/2. Đây là hành vi giả lập, không phải kết quả kiểm thử phần cứng. `packet_id` và `rx_count` bằng nhau trong mô hình truyền nhận lý tưởng của simulator.
+
+Dashboard sử dụng 9 key cảm biến/trạng thái: `temp`, `hum_air`, `hum_soil`, `light`, `nitrogen`, `phosphorus`, `potassium`, `pump_state`, `fan_state`. RuleChain đọc `temp`, `hum_soil`, `pump_state`, `fan_state`; Save Timeseries vẫn lưu toàn bộ telemetry nhận được. Hai trạng thái phải là Boolean để tránh gửi RPC khi thiết bị đã ở đúng trạng thái mong muốn.
 
 ### 5.3. Server-side RPC
 
@@ -153,6 +171,7 @@ Gateway cần báo đủ các key, đặc biệt là hai trạng thái Boolean �
 | `setFan` | Boolean | Đặt trạng thái quạt |
 | `getPump` | Không cần | Đọc trạng thái bơm (simulator hỗ trợ) |
 | `getFan` | Không cần | Đọc trạng thái quạt (simulator hỗ trợ) |
+| `setPumpLevel` | Integer (0–2) | Simulator hỗ trợ; chưa sử dụng trong Dashboard/RuleChain |
 
 Ví dụ yêu cầu bật máy bơm:
 
@@ -160,7 +179,9 @@ Ví dụ yêu cầu bật máy bơm:
 {"method": "setPump", "params": true}
 ```
 
-Gateway phản hồi trạng thái Boolean trên topic response có cùng request ID và báo lại trạng thái thực tế trong telemetry tiếp theo. Không dùng chuỗi `"true"` hoặc `"false"` thay cho Boolean trong RPC params.
+Simulator phản hồi Boolean cho `setPump` và `setFan` trên topic response có cùng request ID; trạng thái giả lập được báo lại trong telemetry tiếp theo. Với `setPump`, simulator và Gateway hiện ánh xạ `true` thành mức 2, `false` thành mức 0. Gateway hiện phản hồi JSON chứa `status: "OK"` và nội dung lệnh downlink; phản hồi này không xác nhận thiết bị vật lý đã thực thi thành công. Cần kiểm thử telemetry phản hồi từ phần cứng. Không dùng chuỗi `"true"` hoặc `"false"` thay cho Boolean trong RPC params.
+
+Dashboard và RuleChain chỉ gửi `setPump` và `setFan`; không gọi `setPumpLevel` hoặc `setAutoMode`. Shared Attribute `auto_mode` điều khiển logic ở CoreIOT, không đồng nghĩa bật chế độ tự động cục bộ của firmware.
 
 ### 5.4. Shared Attributes qua MQTT
 
@@ -184,12 +205,15 @@ Simulator đọc và ghi log cấu hình; logic quyết định tự động v�
 
 | Thành phần | Số lượng | Chức năng |
 |---|---:|---|
-| Gauge | 4 | Hiển thị cảm biến với một chữ số thập phân |
-| Time-series chart | 2 | Biểu đồ nhiệt độ và độ ẩm, 1 phút gần nhất |
-| Single Switch | 3 | Điều khiển bơm, quạt và chế độ tự động |
-| Slider | 2 | Điều chỉnh ngưỡng đất (0–100%) và nhiệt độ (0–50°C) |
-| Alarms Table | 1 | Lịch sử cảnh báo 24 giờ gần nhất |
-| HTML Card | 2 | Tiêu đề và hướng dẫn sử dụng |
+| Gauge | 4 | Air Temperature (0–50°C, 1 chữ số thập phân), Light Intensity, Air Humidity, Soil Moisture (0–100%, 0 chữ số thập phân) |
+| Time-series chart | 2 | Temperature Chart và Humidity Chart, 1 phút gần nhất, AVG theo khoảng 5 giây |
+| Value Card | 3 | Nitrogen, Phosphorus, Potassium (mg/kg, 0 chữ số thập phân) |
+| Single Switch | 3 | Water Pump, Ventilation Fan (ON/OFF), Auto Mode (AUTO/MANUAL) |
+| Slider | 2 | Soil Moisture Threshold (0–100%), Temperature Threshold (0–50°C); ghi giá trị nguyên vào Shared Attributes |
+| Alarms Table | 1 | System Alarms, cửa sổ thời gian 24 giờ gần nhất |
+| HTML Card | 2 | Header tiếng Anh và User Guide tiếng Việt (tên nút tiếng Anh) |
+
+Tổng cộng: **17 widget**. Giao diện chính sử dụng tiếng Anh; chưa có Pump Level và LED Status.
 
 Khi `auto_mode = true`, Disabled state của hai Switch bơm/quạt đọc Shared Attribute `auto_mode` để khóa thao tác nhưng vẫn hiển thị trạng thái telemetry. Khi `auto_mode = false`, người dùng có thể điều khiển thủ công.
 
@@ -219,19 +243,19 @@ flowchart TD
 
 | Thiết bị | Điều kiện bật | Điều kiện tắt |
 |---|---|---|
-| Máy bơm | `soilMoisture < soil_threshold` | `soilMoisture >= soil_threshold` |
-| Quạt | `airTemp > temp_threshold` | `airTemp <= temp_threshold` |
+| Máy bơm | `hum_soil < soil_threshold` | `hum_soil >= soil_threshold` |
+| Quạt | `temp > temp_threshold` | `temp <= temp_threshold` |
 
-Node Get Shared Attributes đưa cấu hình vào metadata dưới dạng chuỗi với tiền tố `shared_`. Script JavaScript chuyển ngưỡng bằng `Number()` và kiểm tra `shared_auto_mode === "true"`. Hai nhánh điều khiển hoạt động độc lập. RPC chỉ được tạo khi trạng thái telemetry khác trạng thái mong muốn.
+Node Get Shared Attributes đưa cấu hình vào metadata dưới dạng chuỗi với tiền tố `shared_`. Script JavaScript chuyển ngưỡng bằng `Number()` và kiểm tra `shared_auto_mode === "true"`. Hai nhánh điều khiển hoạt động độc lập. RPC chỉ được tạo khi trạng thái telemetry khác trạng thái mong muốn. RuleChain giữ nguyên 16 node, 17 liên kết; 10 node JavaScript được cập nhật theo telemetry mới. Các script đang sử dụng JavaScript (không chuyển sang TBEL vì script TBEL lưu kèm chưa được đồng bộ).
 
 ## 7. Alarm và Notification (T13)
 
 | Alarm type | Severity | Điều kiện tạo | Điều kiện kết thúc |
 |---|---|---|---|
-| `High Temperature` | Major | `airTemp > temp_threshold` | `airTemp <= temp_threshold` |
-| `Low Soil Moisture` | Warning | `soilMoisture < soil_threshold` | `soilMoisture >= soil_threshold` |
+| `High Temperature` | Major | `temp > temp_threshold` | `temp <= temp_threshold` |
+| `Low Soil Moisture` | Warning | `hum_soil < soil_threshold` | `hum_soil >= soil_threshold` |
 
-Hai nhánh Alarm nhận message từ Get Shared Attributes, độc lập với Check Auto Mode. Vì vậy, cảnh báo vẫn hoạt động trong chế độ thủ công. Alarm Details lưu giá trị cảm biến, ngưỡng và nội dung cảnh báo; Clear Alarm bổ sung thông tin lúc kết thúc.
+Hai nhánh Alarm nhận message từ Get Shared Attributes, độc lập với Check Auto Mode. Vì vậy, cảnh báo vẫn hoạt động trong chế độ thủ công. Alarm Details lưu giá trị cảm biến (`temp` hoặc `hum_soil`), `threshold`, `unit` và `message` bằng tiếng Anh; Clear Alarm bổ sung `clearTemperature` hoặc `clearSoilMoisture`, `clearThreshold` và `clearMessage`.
 
 - Active: điều kiện cảnh báo đang tồn tại.
 - Cleared: cảnh báo đã kết thúc, lịch sử vẫn được giữ.
@@ -266,9 +290,10 @@ Ví dụ log mong đợi:
 
 ```text
 [MQTT] Connected successfully
-[CONFIG] auto_mode = True
+[CONFIG] auto_mode = False
 [CONFIG] soil_threshold = 40
 [CONFIG] temp_threshold = 35
+[CONFIG] auto_mode = True
 [SEND] ...
 [RPC] Received: setPump, params=True
 [RPC] Response: True
@@ -276,7 +301,7 @@ Ví dụ log mong đợi:
 
 ## 9. Kiểm thử và kết quả
 
-Simulator tạo độ ẩm đất trong khoảng 25–70% và nhiệt độ không khí trong khoảng 25–40°C. Có thể đặt ngưỡng ngoài các khoảng này để kiểm thử ổn định.
+Simulator tạo dữ liệu ngẫu nhiên mỗi 5 giây: nhiệt độ 25–40°C, độ ẩm không khí 50–85%, độ ẩm đất 25–70%, ánh sáng 0–100% và mỗi chỉ số NPK 20–100 mg/kg. Đây là dữ liệu tổng hợp để kiểm thử, không phải ngưỡng dinh dưỡng khuyến nghị. Có thể đặt ngưỡng ngoài khoảng nhiệt độ/độ ẩm đất giả lập để kiểm thử ổn định.
 
 | Thao tác trong chế độ tự động | Kết quả mong đợi |
 |---|---|
@@ -286,7 +311,18 @@ Simulator tạo độ ẩm đất trong khoảng 25–70% và nhiệt độ khô
 | Ngưỡng nhiệt độ 45°C | Quạt tắt; High Temperature Cleared nếu đang Active |
 | Tắt chế độ tự động | Mở khóa Switch; cảnh báo vẫn được xử lý |
 
-Các bài kiểm thử riêng lẻ về telemetry, RPC, Shared Attributes, Filter, Transformation, điều khiển tự động, khóa Switch, Create/Clear Alarm và Notification trong ứng dụng đã được thực hiện thành công trên simulator theo quá trình phát triển. Đợt kiểm thử tích hợp cuối TC44–TC51 được bỏ qua; chưa xác nhận tích hợp với Gateway và phần cứng thật.
+Kết quả ghi nhận sau lần cập nhật telemetry và Dashboard:
+
+| Hạng mục | Kết quả |
+|---|---|
+| 4 Gauge, 2 biểu đồ và 3 Value Card NPK | Đã quan sát hiển thị dữ liệu simulator |
+| RPC bật/tắt bơm và quạt thủ công | Đã kiểm thử trên simulator |
+| Điều khiển tự động bơm và quạt | Đã quan sát tự động bật/tắt trên simulator |
+| Tạo Alarm tự động | Đã quan sát trên Dashboard |
+| Clear Alarm, Notification và toàn bộ trường hợp biên | Chưa xác nhận lại đầy đủ sau cập nhật |
+| Pump Level, LED Status và tích hợp phần cứng | Tạm hoãn / chưa kiểm thử |
+
+Không đánh dấu toàn bộ test case là PASS. Đợt kiểm thử tích hợp cuối TC44–TC51 của phiên bản trước được bỏ qua; chưa xác nhận tích hợp với Gateway và phần cứng thật.
 
 Sau khi kiểm thử giả lập, có thể đưa ngưỡng về 40% và 35°C.
 
@@ -309,6 +345,8 @@ Tắt Debug khi không cần kiểm thử để hạn chế ghi log.
 - Khóa điều khiển hiện tại nằm ở Dashboard, chưa chặn RPC thủ công từ mọi nguồn bên ngoài. Disabled state mặc định là false nếu chưa lấy được cấu hình.
 - RuleChain chưa áp dụng hysteresis hoặc thời gian giữ trạng thái tối thiểu; cảm biến dao động quanh ngưỡng có thể khiến thiết bị bật/tắt thường xuyên. Cần đánh giá trước khi điều khiển phần cứng thật.
 - Simulator lưu trạng thái thiết bị trong RAM; khởi động lại có thể làm trạng thái về false. Gateway thật phải báo trạng thái thực tế.
+- Pump Level và LED Status chỉ được giữ trong cấu trúc telemetry giả lập để tương thích với dữ liệu firmware hiện tại; chưa triển khai trên Dashboard/RuleChain.
 - Cần kiểm tra khả năng tương thích dữ liệu MQTT, điều khiển relay và phản hồi RPC khi tích hợp với Gateway thật.
+- Không bật đồng thời logic tự động cục bộ của firmware và logic tự động trên CoreIOT khi chưa thống nhất cơ chế điều phối.
 - Device, Device Profile, Shared Attributes và Notification Rules phải được thiết lập riêng khi tái triển khai.
 

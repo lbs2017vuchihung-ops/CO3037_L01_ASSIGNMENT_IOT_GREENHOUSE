@@ -11,7 +11,7 @@
     }
   },
   "metadata": {
-    "version": 20,
+    "version": 21,
     "firstNodeIndex": 0,
     "nodes": [
       {
@@ -169,7 +169,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "var soilMoisture = msg.soilMoisture;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\nvar pumpState = msg.pumpState;\n\nif (typeof soilMoisture !== \"number\" ||\n    typeof pumpState !== \"boolean\" ||\n    !isFinite(soilMoisture) ||\n    !isFinite(soilThreshold)) {\n    return false;\n}\n\nvar desiredPumpState = soilMoisture < soilThreshold;\n\nreturn pumpState !== desiredPumpState;",
+          "jsScript": "var hum_soil = msg.hum_soil;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\nvar pump_state = msg.pump_state;\n\nif (typeof hum_soil !== \"number\" ||\n    typeof pump_state !== \"boolean\" ||\n    !isFinite(hum_soil) ||\n    !isFinite(soilThreshold)) {\n    return false;\n}\n\nvar desiredPumpState = hum_soil < soilThreshold;\n\nreturn pump_state !== desiredPumpState;",
           "tbelScript": "var soilMoisture = msg.soilMoisture;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\nvar pumpState = msg.pumpState;\n\nif (typeof soilMoisture !== \"number\" ||\n    typeof pumpState !== \"boolean\" ||\n    !isFinite(soilMoisture) ||\n    !isFinite(soilThreshold)) {\n    return false;\n}\n\nvar desiredPumpState = soilMoisture < soilThreshold;\n\nreturn pumpState !== desiredPumpState;"
         },
         "additionalInfo": {
@@ -191,7 +191,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "var airTemp = msg.airTemp;\nvar tempThreshold = Number(metadata.shared_temp_threshold);\nvar fanState = msg.fanState;\n\nif (typeof airTemp !== \"number\" ||\n    typeof fanState !== \"boolean\" ||\n    !isFinite(airTemp) ||\n    !isFinite(tempThreshold)) {\n    return false;\n}\n\nvar desiredFanState = airTemp > tempThreshold;\n\nreturn fanState !== desiredFanState;",
+          "jsScript": "var temp = msg.temp;\nvar tempThreshold = Number(metadata.shared_temp_threshold);\nvar fan_state = msg.fan_state;\n\nif (typeof temp !== \"number\" ||\n    typeof fan_state !== \"boolean\" ||\n    !isFinite(temp) ||\n    !isFinite(tempThreshold)) {\n    return false;\n}\n\nvar desiredFanState = temp > tempThreshold;\n\nreturn fan_state !== desiredFanState;",
           "tbelScript": "return msg.temperature > 20;"
         },
         "additionalInfo": {
@@ -213,7 +213,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "var soilMoisture = msg.soilMoisture;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\n\nvar desiredPumpState = soilMoisture < soilThreshold;\n\nvar rpcMsg = {\n    method: \"setPump\",\n    params: desiredPumpState\n};\n\nreturn {\n    msg: rpcMsg,\n    metadata: metadata,\n    msgType: msgType\n};",
+          "jsScript": "var hum_soil = msg.hum_soil;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\n\nvar desiredPumpState = hum_soil < soilThreshold;\n\nvar rpcMsg = {\n    method: \"setPump\",\n    params: desiredPumpState\n};\n\nreturn {\n    msg: rpcMsg,\n    metadata: metadata,\n    msgType: msgType\n};",
           "tbelScript": "return {msg: msg, metadata: metadata, msgType: msgType};"
         },
         "additionalInfo": {
@@ -235,7 +235,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "var airTemp = msg.airTemp;\nvar tempThreshold = Number(metadata.shared_temp_threshold);\n\nvar desiredFanState = airTemp > tempThreshold;\n\nvar rpcMsg = {\n    method: \"setFan\",\n    params: desiredFanState\n};\n\nreturn {\n    msg: rpcMsg,\n    metadata: metadata,\n    msgType: msgType\n};",
+          "jsScript": "var temp = msg.temp;\nvar tempThreshold = Number(metadata.shared_temp_threshold);\n\nvar desiredFanState = temp > tempThreshold;\n\nvar rpcMsg = {\n    method: \"setFan\",\n    params: desiredFanState\n};\n\nreturn {\n    msg: rpcMsg,\n    metadata: metadata,\n    msgType: msgType\n};",
           "tbelScript": "return {msg: msg, metadata: metadata, msgType: msgType};"
         },
         "additionalInfo": {
@@ -257,7 +257,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "var airTemp = msg.airTemp;\nvar tempThreshold = Number(metadata.shared_temp_threshold);\n\nif (typeof airTemp !== \"number\" ||\n    !isFinite(airTemp) ||\n    !isFinite(tempThreshold)) {\n    throw new Error(\"Invalid temperature data\");\n}\n\nreturn airTemp > tempThreshold;",
+          "jsScript": "var temp = msg.temp;\nvar tempThreshold = Number(metadata.shared_temp_threshold);\n\nif (typeof temp !== \"number\" ||\n    !isFinite(temp) ||\n    !isFinite(tempThreshold)) {\n    throw new Error(\"Invalid temperature data\");\n}\n\nreturn temp > tempThreshold;",
           "tbelScript": "return msg.temperature > 20;"
         },
         "additionalInfo": {
@@ -279,7 +279,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "alarmDetailsBuildJs": "var details = {\n    airTemp: msg.airTemp,\n    threshold: Number(metadata.shared_temp_threshold),\n    unit: \"°C\",\n    message: \"Nhiệt độ không khí vượt ngưỡng cho phép\"\n};\n\nreturn details;",
+          "alarmDetailsBuildJs": "var details = {\n    temp: msg.temp,\n    threshold: Number(metadata.shared_temp_threshold),\n    unit: \"°C\",\n    message: \"Air temperature exceeds the configured threshold\"\n};\n\nreturn details;",
           "alarmDetailsBuildTbel": "var details = {};\nif (metadata.prevAlarmDetails != null) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n    //remove prevAlarmDetails from metadata\n    metadata.remove('prevAlarmDetails');\n    //now metadata is the same as it comes IN this rule node\n}\n\n\nreturn details;",
           "useMessageAlarmData": false,
           "overwriteAlarmDetails": false,
@@ -311,7 +311,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "alarmDetailsBuildJs": "var details = {};\n\nif (metadata.prevAlarmDetails) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n}\n\ndetails.clearTemperature = msg.airTemp;\ndetails.clearThreshold = Number(metadata.shared_temp_threshold);\ndetails.clearMessage = \"Nhiệt độ đã trở lại mức cho phép\";\n\nreturn details;",
+          "alarmDetailsBuildJs": "var details = {};\n\nif (metadata.prevAlarmDetails) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n}\n\ndetails.clearTemperature = msg.temp;\ndetails.clearThreshold = Number(metadata.shared_temp_threshold);\ndetails.clearMessage = \"Air temperature has returned to the acceptable range\";\n\nreturn details;",
           "alarmDetailsBuildTbel": "var details = {};\nif (metadata.prevAlarmDetails != null) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n    //remove prevAlarmDetails from metadata\n    metadata.remove('prevAlarmDetails');\n    //now metadata is the same as it comes IN this rule node\n}\n\n\nreturn details;",
           "alarmType": "High Temperature"
         },
@@ -330,7 +330,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "jsScript": "var soilMoisture = msg.soilMoisture;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\n\nif (typeof soilMoisture !== \"number\" ||\n    !isFinite(soilMoisture) ||\n    !isFinite(soilThreshold)) {\n    throw new Error(\"Invalid soil moisture data\");\n}\n\nreturn soilMoisture < soilThreshold;",
+          "jsScript": "var hum_soil = msg.hum_soil;\nvar soilThreshold = Number(metadata.shared_soil_threshold);\n\nif (typeof hum_soil !== \"number\" ||\n    !isFinite(hum_soil) ||\n    !isFinite(soilThreshold)) {\n    throw new Error(\"Invalid soil moisture data\");\n}\n\nreturn hum_soil < soilThreshold;",
           "tbelScript": "return msg.temperature > 20;"
         },
         "additionalInfo": {
@@ -348,7 +348,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "alarmDetailsBuildJs": "var details = {\n    soilMoisture: msg.soilMoisture,\n    threshold: Number(metadata.shared_soil_threshold),\n    unit: \"%\",\n    message: \"Độ ẩm đất thấp hơn ngưỡng cho phép\"\n};\n\nreturn details;",
+          "alarmDetailsBuildJs": "var details = {\n    hum_soil: msg.hum_soil,\n    threshold: Number(metadata.shared_soil_threshold),\n    unit: \"%\",\n    message: \"Soil moisture is below the configured threshold\"\n};\n\nreturn details;",
           "alarmDetailsBuildTbel": "var details = {};\nif (metadata.prevAlarmDetails != null) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n    //remove prevAlarmDetails from metadata\n    metadata.remove('prevAlarmDetails');\n    //now metadata is the same as it comes IN this rule node\n}\n\n\nreturn details;",
           "useMessageAlarmData": false,
           "overwriteAlarmDetails": false,
@@ -376,7 +376,7 @@
         "configurationVersion": 0,
         "configuration": {
           "scriptLang": "JS",
-          "alarmDetailsBuildJs": "var details = {};\n\nif (metadata.prevAlarmDetails) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n}\n\ndetails.clearSoilMoisture = msg.soilMoisture;\ndetails.clearThreshold = Number(metadata.shared_soil_threshold);\ndetails.clearMessage = \"Độ ẩm đất đã trở lại mức cho phép\";\n\nreturn details;",
+          "alarmDetailsBuildJs": "var details = {};\n\nif (metadata.prevAlarmDetails) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n}\n\ndetails.clearSoilMoisture = msg.hum_soil;\ndetails.clearThreshold = Number(metadata.shared_soil_threshold);\ndetails.clearMessage = \"Soil moisture has returned to the acceptable range\";\n\nreturn details;",
           "alarmDetailsBuildTbel": "var details = {};\nif (metadata.prevAlarmDetails != null) {\n    details = JSON.parse(metadata.prevAlarmDetails);\n    //remove prevAlarmDetails from metadata\n    metadata.remove('prevAlarmDetails');\n    //now metadata is the same as it comes IN this rule node\n}\n\n\nreturn details;",
           "alarmType": "Low Soil Moisture"
         },

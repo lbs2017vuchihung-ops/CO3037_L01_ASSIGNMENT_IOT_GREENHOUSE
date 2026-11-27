@@ -1,4 +1,3 @@
-
 import os
 import json
 import time
@@ -13,10 +12,8 @@ ACCESS_TOKEN = os.getenv("COREIOT_ACCESS_TOKEN")
 
 # MQTT topics
 TELEMETRY_TOPIC = "v1/devices/me/telemetry"
-
 RPC_REQUEST_TOPIC = "v1/devices/me/rpc/request/+"
 RPC_RESPONSE_TOPIC = "v1/devices/me/rpc/response/"
-
 ATTRIBUTE_TOPIC = "v1/devices/me/attributes"
 ATTRIBUTE_REQUEST_TOPIC = "v1/devices/me/attributes/request/"
 ATTRIBUTE_RESPONSE_TOPIC = "v1/devices/me/attributes/response/+"
@@ -27,13 +24,22 @@ PUBLISH_TIMEOUT = 15
 
 connected = threading.Event()
 
-# Device state
+# Device state: pump_state and led_color are derived from pump_level.
 device_state = {
-    "pumpState": False,
-    "fanState": False
+    "pump_level": 0,
+    "fan_state": False
 }
 
+LED_COLORS = {
+    0: "GREEN",
+    1: "YELLOW",
+    2: "RED"
+}
+
+packet_id = 0
+
 # Shared attributes configuration
+# Automatic control is handled by CoreIOT RuleChain, not the simulator.
 device_config = {
     "auto_mode": None,
     "soil_threshold": None,
@@ -106,18 +112,27 @@ def handle_rpc(client, topic, request):
     print(f"[RPC] Received: {method}, params={params}")
 
     if method == "setPump" and isinstance(params, bool):
-        device_state["pumpState"] = params
-        response = device_state["pumpState"]
+        device_state["pump_level"] = 2 if params else 0
+        response = device_state["pump_level"] > 0
+
+    elif method == "setPumpLevel" and type(params) is int:
+        if params in LED_COLORS:
+            device_state["pump_level"] = params
+            response = device_state["pump_level"]
+        else:
+            response = {
+                "error": "Invalid pump level"
+            }
 
     elif method == "setFan" and isinstance(params, bool):
-        device_state["fanState"] = params
-        response = device_state["fanState"]
+        device_state["fan_state"] = params
+        response = device_state["fan_state"]
 
     elif method == "getPump":
-        response = device_state["pumpState"]
+        response = device_state["pump_level"] > 0
 
     elif method == "getFan":
-        response = device_state["fanState"]
+        response = device_state["fan_state"]
 
     else:
         response = {
@@ -163,13 +178,27 @@ def on_message(client, userdata, message):
 
 
 def generate_telemetry():
+    global packet_id
+
+    packet_id += 1
+    pump_level = device_state["pump_level"]
+
+    # Simulate an ideal ESP-NOW link: rx_count equals packet_id.
+    # Sensor values are synthetic and are not agronomic thresholds.
     return {
-        "soilMoisture": round(random.uniform(25, 70), 1),
-        "soilTemp": round(random.uniform(24, 32), 1),
-        "airTemp": round(random.uniform(25, 40), 1),
-        "airHumidity": round(random.uniform(50, 85), 1),
-        "pumpState": device_state["pumpState"],
-        "fanState": device_state["fanState"]
+        "packet_id": packet_id,
+        "rx_count": packet_id,
+        "temp": round(random.uniform(25, 40), 1),
+        "hum_air": round(random.uniform(50, 85), 1),
+        "hum_soil": random.randint(25, 70),
+        "light": random.randint(0, 100),
+        "nitrogen": random.randint(20, 100),
+        "phosphorus": random.randint(20, 100),
+        "potassium": random.randint(20, 100),
+        "pump_level": pump_level,
+        "pump_state": pump_level > 0,
+        "fan_state": device_state["fan_state"],
+        "led_color": LED_COLORS[pump_level]
     }
 
 
