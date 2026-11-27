@@ -41,10 +41,11 @@ bool espnow_center_init(const uint8_t *slave_mac)
     return (esp_now_add_peer(&peerInfo) == ESP_OK);
 }
 
-bool espnow_send_pump_level(PumpLevel level, bool auto_mode)
+bool espnow_send_pump_level(PumpLevel level, bool set_fan, bool auto_mode)
 {
     struct_command cmd;
     cmd.target_level = level;
+    cmd.set_fan = set_fan;
     cmd.auto_mode = auto_mode;
     return (esp_now_send(g_slave_mac, (uint8_t *)&cmd, sizeof(cmd)) == ESP_OK);
 }

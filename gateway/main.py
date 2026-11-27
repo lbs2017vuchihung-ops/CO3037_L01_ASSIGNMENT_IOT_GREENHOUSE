@@ -62,6 +62,8 @@ class FarmLabGateway:
             elif method == "setPump":
                 is_on = bool(params)
                 downlink_cmd = {"pump_level": 2 if is_on else 0, "auto": False}
+            elif method == "setFan":
+                downlink_cmd = {"fan": bool(params), "auto": False}
             elif method == "setAutoMode":
                 downlink_cmd = {"auto": bool(params)}
 

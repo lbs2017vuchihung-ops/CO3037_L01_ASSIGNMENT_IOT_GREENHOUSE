@@ -47,7 +47,7 @@ static void on_data_recv(const uint8_t *mac, const uint8_t *data, int len)
 
         if (g_actuator_cb != nullptr)
         {
-            g_actuator_cb(cmd.target_level, cmd.auto_mode);
+            g_actuator_cb(cmd.target_level, cmd.set_fan, cmd.auto_mode);
         }
     }
 }
@@ -114,7 +114,7 @@ void espnow_set_actuator_callback(ActuatorCommandCallback cb)
 
 bool espnow_pack_and_send(
     float temp, float hum_air, int hum_soil, int light,
-    int n, int p, int k, PumpLevel pump_level)
+    int n, int p, int k, PumpLevel pump_level, bool fan_state)
 {
     g_sent_count++; // Mỗi lần gọi hàm gửi là tăng bộ đếm
 
@@ -128,6 +128,7 @@ bool espnow_pack_and_send(
     pkt.phosphorus = p;
     pkt.potassium = k;
     pkt.pump_level = pump_level;
+    pkt.fan_state = fan_state;
 
     esp_err_t res = esp_now_send(g_center_mac, (uint8_t *)&pkt, sizeof(pkt));
 

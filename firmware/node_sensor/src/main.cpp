@@ -8,10 +8,12 @@
 
 uint8_t CENTER_MAC[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF}; // Đổi thành MAC thật của Center
 
-void on_remote_command(PumpLevel target_level, bool auto_mode)
+void on_remote_command(PumpLevel target_level, bool set_fan, bool auto_mode)
 {
   actuator_set_auto_mode(auto_mode);
   actuator_set_level(target_level); // Cập nhật đồng thời Relay bơm + Đèn Xanh/Vàng/Đỏ
+  fan_set_auto_mode(auto_mode);
+  fan_set_state(set_fan);
 }
 
 void setup()
@@ -22,6 +24,7 @@ void setup()
   npk_init();
   light_init();
   actuator_init();
+  fan_init();
 
   espnow_sensor_init(CENTER_MAC, "Ten_WiFi_Nha_Ban");
   espnow_set_actuator_callback(on_remote_command);
@@ -40,9 +43,10 @@ void loop()
 
   // 2. Cập nhật logic tưới & đèn giao thông (tự động nếu đang ở auto_mode)
   PumpLevel current_level = actuator_update(soil);
+  bool current_fan = fan_update(t);
 
   // 3. Đóng gói toàn bộ dữ liệu, đếm gói và bắn qua ESP-NOW
-  espnow_pack_and_send(t, h, soil, light, n, p, k, current_level);
+  espnow_pack_and_send(t, h, soil, light, n, p, k, current_level, current_fan);
 
   vTaskDelay(pdMS_TO_TICKS(2000));
 }

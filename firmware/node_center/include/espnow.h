@@ -21,11 +21,13 @@ typedef struct __attribute__((packed))
     int phosphorus;
     int potassium;
     PumpLevel pump_level;
+    bool fan_state;
 } struct_telemetry;
 
 typedef struct __attribute__((packed))
 {
     PumpLevel target_level;
+    bool set_fan;
     bool auto_mode;
 } struct_command;
 
