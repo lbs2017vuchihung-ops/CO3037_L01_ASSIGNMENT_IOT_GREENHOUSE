@@ -13,6 +13,10 @@ PubSubClient mqttClient(espClient);
 static struct_telemetry g_display_data = {0};
 static uint32_t g_display_rx_count = 0;
 
+// Lưu trạng thái lệnh hiện hành để tránh lệnh Quạt làm reset lệnh Bơm (và ngược lại)
+static PumpLevel g_cmd_pump_level = PUMP_OFF_GREEN;
+static bool g_cmd_fan_state = false;
+
 // =========================================================================
 // 1. HÀM XỬ LÝ LỆNH RPC NHẬN TỪ COREIOT -> CHUYỂN TIẾP QUA ESP-NOW VỀ SLAVE
 // =========================================================================
@@ -65,6 +69,7 @@ void onCoreIOTRpcCallback(char *topic, byte *payload, unsigned int length)
       String respTopic = "v1/devices/me/rpc/response/" + reqId;
       StaticJsonDocument<64> respDoc;
       respDoc["pump_level"] = (int)target_level;
+      respDoc["fan_state"] = g_cmd_fan_state;
       respDoc["status"] = "OK";
       char respBuf[64];
       serializeJson(respDoc, respBuf);
@@ -105,6 +110,7 @@ void publishTelemetry(const struct_telemetry &d, uint32_t rx_count)
   doc["potassium"] = d.potassium;
   doc["pump_level"] = (int)d.pump_level;
   doc["pump_state"] = (d.pump_level > PUMP_OFF_GREEN);
+  doc["fan_state"] = d.fan_state;
   doc["led_color"] = (d.pump_level == PUMP_OFF_GREEN) ? "GREEN" : (d.pump_level == PUMP_LOW_YELLOW) ? "YELLOW"
                                                                                                     : "RED";
 
@@ -154,6 +160,8 @@ void taskCoreIOTAndGateway(void *pvParameters)
     {
       g_display_data = new_pkt;
       g_display_rx_count = rx_cnt;
+      g_cmd_pump_level = new_pkt.pump_level;
+      g_cmd_fan_state = new_pkt.fan_state;
       publishTelemetry(new_pkt, rx_cnt);
     }
 
@@ -168,15 +176,28 @@ void taskCoreIOTAndGateway(void *pvParameters)
         if (!deserializeJson(cmdDoc, cmdLine))
         {
           bool auto_cmd = cmdDoc["auto"] | false;
+          bool has_update = false;
           if (cmdDoc.containsKey("pump_level"))
           {
             int lvl = constrain(cmdDoc["pump_level"].as<int>(), 0, 2);
-            espnow_send_pump_level((PumpLevel)lvl, auto_cmd);
+            g_cmd_pump_level = (PumpLevel)lvl;
+            has_update = true;
           }
           else if (cmdDoc.containsKey("pump"))
           {
             bool on = cmdDoc["pump"].as<bool>();
-            espnow_send_pump_level(on ? PUMP_HIGH_RED : PUMP_OFF_GREEN, auto_cmd);
+            g_cmd_pump_level = on ? PUMP_HIGH_RED : PUMP_OFF_GREEN;
+            has_update = true;
+          }
+          if (cmdDoc.containsKey("fan"))
+          {
+            g_cmd_fan_state = cmdDoc["fan"].as<bool>();
+            has_update = true;
+          }
+
+          if (has_update || cmdDoc.containsKey("auto"))
+          {
+            espnow_send_command(g_cmd_pump_level, g_cmd_fan_state, auto_cmd);
           }
         }
       }

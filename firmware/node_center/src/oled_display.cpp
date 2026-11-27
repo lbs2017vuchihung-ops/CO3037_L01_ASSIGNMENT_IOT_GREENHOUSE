@@ -88,7 +88,7 @@ void oled_update_telemetry(
     const char *pump_str = (data.pump_level == PUMP_OFF_GREEN) ? "BOM: TAT [DEN XANH]" : (data.pump_level == PUMP_LOW_YELLOW) ? "BOM: IT  [DEN VANG]"
                                                                                                                               : "BOM: NHIEU [DEN DO]";
     display.setCursor(0, 55);
-    display.print(pump_str);
+    display.printf("%s Q:%s", pump_str, data.fan_state ? "BAT" : "TAT");
 
     display.display();
 }

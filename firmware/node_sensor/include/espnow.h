@@ -23,12 +23,14 @@ typedef struct __attribute__((packed))
     int phosphorus;       // Chỉ số Phốt pho (P) - RS485 (mg/kg)
     int potassium;        // Chỉ số Kali (K) - RS485 (mg/kg)
     PumpLevel pump_level; // Mức bơm & màu đèn giao thông hiện tại (0, 1, 2)
+    bool fan_state;       // Trạng thái thực tế của quạt (true: BẬT, false: TẮT)
 } struct_telemetry;
 
 // Gói tin lệnh nhận về: Center / CoreIOT -> Slave
 typedef struct __attribute__((packed))
 {
     PumpLevel target_level; // Mức bơm yêu cầu (0: Xanh/Tắt, 1: Vàng/Ít, 2: Đỏ/Nhiều)
+    bool set_fan;           // Lệnh điều khiển quạt (true: BẬT, false: TẮT)
     bool auto_mode;         // true: Tự động theo ngưỡng, false: Điều khiển tay
 } struct_command;
 
@@ -44,7 +46,7 @@ void espnow_set_actuator_callback(ActuatorCommandCallback cb);
 // Nhận data từ các file .h của sensor, đóng gói, tăng biến đếm và gửi sang Center
 bool espnow_pack_and_send(
     float temp, float hum_air, int hum_soil, int light,
-    int n, int p, int k, PumpLevel pump_level);
+    int n, int p, int k, PumpLevel pump_level, bool fan_state);
 
 // Lấy thống kê số gói tin (dùng hiển thị LCD tại chỗ & đo đạc Chương 4)
 uint32_t espnow_get_sent_count();

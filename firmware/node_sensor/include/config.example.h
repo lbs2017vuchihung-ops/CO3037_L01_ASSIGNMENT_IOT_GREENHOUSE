@@ -40,3 +40,6 @@ const uint8_t CENTER_MAC_ADDR[6] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 // Ngưỡng độ ẩm đất (%) cho chế độ tưới tự động
 #define SOIL_THRESHOLD_LOW 40  // Dưới 40% -> Mức Vàng (Bơm ít)
 #define SOIL_THRESHOLD_CRIT 25 // Dưới 25% -> Mức Đỏ (Bơm nhiều)
+
+#define FAN_RELAY_PIN 9          // Chân kích Relay kênh 2 điều khiển quạt
+#define TEMP_THRESHOLD_HIGH 35.0 // Ngưỡng nhiệt độ tự động bật quạt (°C)
